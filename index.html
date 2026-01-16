@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CyberAirdrop Ultra Pro</title>
+    <style>
+        /* KOMPLETNY STYL CSS - ZASTĘPUJE TAILWIND */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #020617;
+            color: #f8fafc;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            /* Wyłączenie zaznaczania tekstu w całej aplikacji */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #020617;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .start-btn {
+            padding: 20px 50px;
+            background: #22d3ee;
+            color: #010816;
+            border: none;
+            border-radius: 15px;
+            font-weight: 900;
+            font-size: 22px;
+            cursor: pointer;
+            box-shadow: 0 0 40px rgba(34, 211, 238, 0.3);
+            transition: transform 0.2s;
+            text-transform: uppercase;
+        }
+
+        .start-btn:hover { transform: scale(1.05); }
+
+        #game-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: none;
+            flex-direction: column;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+        }
+
+        header {
+            height: 90px;
+            padding: 0 25px;
+            background: rgba(0, 0, 0, 0.6);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(15px);
+        }
+
+        .badge {
+            background: #22d3ee;
+            color: #000;
+            font-size: 11px;
+            font-weight: 900;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .stat-label { font-size: 10px; color: #64748b; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 18px; color: #4ade80; font-weight: 800; margin: 2px 0 0 0; }
+
+        main {
+            flex: 1;
+            overflow-y: auto;
+            position: relative;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            scrollbar-width: none;
+        }
+        main::-webkit-scrollbar { display: none; }
+
+        .coin-display {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .coin-val {
+            font-size: 56px;
+            font-weight: 900;
+            margin: 0;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+
+        .clicker-circle {
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(34, 211, 238, 0.15) 0%, transparent 70%);
+            border: 8px solid rgba(255, 255, 255, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 40px auto;
+            cursor: pointer;
+            transition: transform 0.05s;
+            box-shadow: 0 0 60px rgba(34, 211, 238, 0.05);
+            position: relative;
+        }
+
+        .clicker-circle:active { transform: scale(0.94); }
+        .clicker-circle span { font-size: 100px; user-select: none; pointer-events: none; }
+
+        .upgrade-list { width: 100%; max-width: 450px; padding-bottom: 120px; }
+        
+        .upgrade-item {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 18px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .upgrade-item:hover { background: rgba(30, 41, 59, 0.8); }
+        .upgrade-item.disabled { opacity: 0.3; cursor: not-allowed; }
+        
+        .upgrade-icon { 
+            font-size: 28px; 
+            margin-right: 18px; 
+            width: 50px; 
+            height: 50px;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+
+        .upgrade-info { flex: 1; }
+        .upgrade-name { font-weight: 800; font-size: 15px; margin: 0; text-transform: uppercase; color: #f1f5f9; }
+        .upgrade-meta { font-size: 11px; color: #4ade80; font-weight: 700; margin-top: 2px; }
+        .upgrade-cost { color: #22d3ee; font-weight: 900; font-size: 16px; }
+
+        nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 85px;
+            background: rgba(2, 6, 23, 0.95);
+            display: flex;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #475569;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .nav-btn.active { color: #22d3ee; }
+        .nav-btn .icon { font-size: 22px; }
+        .nav-btn .label { font-size: 10px; font-weight: 900; text-transform: uppercase; margin-top: 6px; letter-spacing: 0.5px; }
+
+        .particle {
+            position: fixed;
+            pointer-events: none;
+            color: #22d3ee;
+            font-weight: 900;
+            font-size: 26px;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 9999;
+            text-shadow: 0 0 10px rgba(34, 211, 238, 0.8);
+        }
+
+        @keyframes floatUp {
+            0% { transform: translate(-50%, 0); opacity: 1; }
+            100% { transform: translate(-50%, -120px); opacity: 0; }
+        }
+
+        .hidden { display: none !important; }
+        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+    </style>
+</head>
+<body>
+
+<!-- Ekran startowy inicjujący grę -->
+<div id="start-screen">
+    <div style="font-size: 60px; margin-bottom: 10px;">💎</div>
+    <h1 style="color: #fff; margin-bottom: 5px; font-size: 28px; font-weight: 900; text-transform: uppercase;">CyberAirdrop</h1>
+    <p style="color: #64748b; margin-bottom: 30px; font-weight: 700;">WERSJA ULTRA PRO v3.0</p>
+    <button class="start-btn" onclick="startGame()">Zainicjuj System</button>
+</div>
+
+<div id="game-wrapper">
+    <header>
+        <div>
+            <div id="lvl-badge" class="badge">Poziom 1</div>
+            <p id="energy-text" class="stat-label" style="margin-top: 6px;">⚡ 1000 / 1000</p>
+        </div>
+        <div style="text-align: right;">
+            <p class="stat-label">Zysk na godzinę</p>
+            <p id="pph-display" class="stat-value">+0</p>
+        </div>
+    </header>
+
+    <!-- TAB: KOPALNIA -->
+    <main id="tab-main">
+        <div class="coin-display">
+            <h1 id="coin-display-val" class="coin-val">0</h1>
+            <p class="stat-label" style="letter-spacing: 3px; margin-top: 5px;">Tokeny</p>
+        </div>
+        
+        <div id="clicker-btn" class="clicker-circle">
+            <span id="clicker-icon">💎</span>
+        </div>
+        
+        <div style="text-align: center;">
+            <p class="stat-label" style="animation: pulse 2s infinite; font-size: 12px;">Dotknij diamentu, aby kopać</p>
+        </div>
+    </main>
+
+    <!-- TAB: SKLEP -->
+    <main id="tab-shop" class="hidden">
+        <h2 style="font-size: 18px; text-transform: uppercase; width: 100%; max-width: 450px; margin-bottom: 25px; font-weight: 900; color: #22d3ee;">Infrastruktura</h2>
+        <div id="shop-list" class="upgrade-list"></div>
+    </main>
+
+    <!-- TAB: SEKTORY -->
+    <main id="tab-map" class="hidden">
+        <h2 style="font-size: 18px; text-transform: uppercase; width: 100%; max-width: 450px; margin-bottom: 25px; font-weight: 900; color: #22d3ee;">Lokalizacje</h2>
+        <div id="map-list" class="upgrade-list"></div>
+    </main>
+
+    <nav>
+        <button onclick="changeTab('main')" id="btn-main" class="nav-btn active">
+            <span class="icon">⛏️</span>
+            <span class="label">Kopanie</span>
+        </button>
+        <button onclick="changeTab('shop')" id="btn-shop" class="nav-btn">
+            <span class="icon">🚀</span>
+            <span class="label">Ulepsz</span>
+        </button>
+        <button onclick="changeTab('map')" id="btn-map" class="nav-btn">
+            <span class="icon">🛰️</span>
+            <span class="label">Sektory</span>
+        </button>
+    </nav>
+</div>
+
+<script>
+    // System stanu gry
+    const game = {
+        coins: 0,
+        pph: 0,
+        energy: 1000,
+        level: 1,
+        sector: 0,
+        upgrades: [
+            { id: 0, name: "Neural Bot", cost: 150, zysk: 10, lvl: 0, ico: "🤖" },
+            { id: 1, name: "Kopalnia GPU", cost: 2500, zysk: 120, lvl: 0, ico: "⚡" },
+            { id: 2, name: "Data Center", cost: 35000, zysk: 1100, lvl: 0, ico: "🏢" },
+            { id: 3, name: "Kwantowy Core", cost: 450000, zysk: 15000, lvl: 0, ico: "🌀" },
+            { id: 4, name: "AI Mainframe", cost: 2000000, zysk: 85000, lvl: 0, ico: "🧠" }
+        ],
+        maps: [
+            { id: 0, name: "Baza Naziemna", mult: 1, req: 1, ico: "🏠", skin: "💎" },
+            { id: 1, name: "Neon District", mult: 8, req: 10, ico: "🏙️", skin: "🧿" },
+            { id: 2, name: "Stacja Orbitalna", mult: 45, req: 30, ico: "🛰️", skin: "🔮" },
+            { id: 3, name: "Rdzeń Marsa", mult: 150, req: 60, ico: "☄️", skin: "🔴" }
+        ]
+    };
+
+    function startGame() {
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('game-wrapper').style.display = 'flex';
+        loadData();
+        updateUI();
+        runGameLoop();
+    }
+
+    function saveData() {
+        localStorage.setItem('cyber_airdrop_final_v3', JSON.stringify(game));
+    }
+
+    function loadData() {
+        const saved = localStorage.getItem('cyber_airdrop_final_v3');
+        if(saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                game.coins = parsed.coins || 0;
+                game.pph = parsed.pph || 0;
+                game.level = parsed.level || 1;
+                game.sector = parsed.sector || 0;
+                if(parsed.upgrades) {
+                    parsed.upgrades.forEach((u, i) => {
+                        if(game.upgrades[i]) game.upgrades[i].lvl = u.lvl;
+                    });
+                }
+            } catch(e) { console.error("Błąd ładowania zapisu"); }
+        }
+    }
+
+    function updateUI() {
+        const s = game.maps[game.sector];
+        document.getElementById('coin-display-val').innerText = Math.floor(game.coins).toLocaleString();
+        document.getElementById('pph-display').innerText = '+' + Math.floor(game.pph * s.mult).toLocaleString();
+        document.getElementById('energy-text').innerText = `⚡ ${Math.floor(game.energy)} / 1000`;
+        document.getElementById('lvl-badge').innerText = `Poziom ${game.level}`;
+        document.getElementById('clicker-icon').innerText = s.skin;
+        renderShop();
+        renderMaps();
+    }
+
+    function renderShop() {
+        const container = document.getElementById('shop-list');
+        if(!container) return;
+        container.innerHTML = '';
+        game.upgrades.forEach(u => {
+            const price = Math.floor(u.cost * Math.pow(1.6, u.lvl));
+            const canAfford = game.coins >= price;
+            const item = document.createElement('div');
+            item.className = `upgrade-item ${canAfford ? '' : 'disabled'}`;
+            item.onclick = () => {
+                if(game.coins >= price) {
+                    game.coins -= price;
+                    game.pph += u.zysk;
+                    u.lvl++;
+                    if(u.lvl % 5 === 0) game.level++;
+                    updateUI();
+                    saveData();
+                }
+            };
+            item.innerHTML = `
+                <div class="upgrade-icon">${u.ico}</div>
+                <div class="upgrade-info">
+                    <p class="upgrade-name">${u.name} (Lvl ${u.lvl})</p>
+                    <p class="upgrade-meta">+$${u.zysk}/h</p>
+                </div>
+                <div class="upgrade-cost">${price.toLocaleString()}</div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function renderMaps() {
+        const container = document.getElementById('map-list');
+        if(!container) return;
+        container.innerHTML = '';
+        game.maps.forEach(m => {
+            const locked = game.level < m.req;
+            const active = game.sector === m.id;
+            const item = document.createElement('div');
+            item.className = `upgrade-item ${locked ? 'disabled' : ''}`;
+            if(!locked) item.onclick = () => { game.sector = m.id; updateUI(); saveData(); };
+            item.innerHTML = `
+                <div class="upgrade-icon">${m.ico}</div>
+                <div class="upgrade-info">
+                    <p class="upgrade-name">${m.name}</p>
+                    <p class="upgrade-meta">Mnożnik: x${m.mult}</p>
+                </div>
+                <div class="upgrade-cost">${locked ? 'Wymaga Lvl '+m.req : (active ? 'AKTYWNY' : 'WYBIERZ')}</div>
+            `;
+            if(active) item.style.border = "1px solid #22d3ee";
+            container.appendChild(item);
+        });
+    }
+
+    function changeTab(id) {
+        document.querySelectorAll('main').forEach(m => m.classList.add('hidden'));
+        document.getElementById('tab-'+id).classList.remove('hidden');
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-'+id).classList.add('active');
+    }
+
+    const clickArea = document.getElementById('clicker-btn');
+    function handleTap(e) {
+        if(game.energy < 1) return;
+        
+        const rect = clickArea.getBoundingClientRect();
+        const touch = e.touches ? e.touches[0] : e;
+        const x = touch.clientX || (rect.left + rect.width / 2);
+        const y = touch.clientY || (rect.top + rect.height / 2);
+        
+        const s = game.maps[game.sector];
+        const power = game.level * s.mult;
+        
+        game.coins += power;
+        game.energy -= 1;
+
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        p.innerText = '+' + power;
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 800);
+        
+        updateUI();
+    }
+
+    clickArea.addEventListener('touchstart', (e) => { e.preventDefault(); handleTap(e); }, {passive: false});
+    clickArea.addEventListener('mousedown', handleTap);
+
+    function runGameLoop() {
+        setInterval(() => {
+            const s = game.maps[game.sector];
+            game.coins += (game.pph * s.mult) / 3600;
+            game.energy = Math.min(1000, game.energy + 1.5);
+            updateUI();
+            if(Math.random() > 0.95) saveData();
+        }, 1000);
+    }
+</script>
+
+</body>
+</html>
